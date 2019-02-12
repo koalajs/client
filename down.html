@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>下载中</title>
+  <style>
+    body {
+      height: 100vh;
+      width: 100vw;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .bar {
+      background: #fff;
+    }
+    .bar-unfill {
+      background: #8e44ad;
+    }
+    .progress {
+      height:30px;
+      display:block;
+      background-image: linear-gradient(0, #f10 0px, #ddd 50px, #ddd 100px);
+      width: 600px;
+      border-radius: 8px;
+      color: #ccc;
+      transition:width .8s ease;
+      animation:progressbar 7s infinite
+    }
+    .w700 {
+      width: 700px;
+      text-align: left;
+      padding: 50px;
+    }
+    .line {
+      line-height: 1rem;
+    }
+    .msg {
+      padding-top: 10px;
+      padding-bottom: 0px;
+    }
+    .img {
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bar w700">
+    <h5>下载中......</h5>
+    <progress class="progress" id="progress" value="0"></progress>
+  </div>
+</body>
+<script>
+  const { ipcRenderer } = require('electron')
+  ipcRenderer.send('downPageReady')
+  ipcRenderer.on('newDownloadBytes', (event, arg) => {
+    document.getElementById('progress').value = arg
+    document.title = arg
+  })
+</script>
+</html>

@@ -1,0 +1,11 @@
+.DS_Store
+.thumbs.db
+node_modules/
+dist/
+npm-debug.log*
+cordova/platforms
+cordova/plugins
+.vscode/
+build/
+log4js.log
+cheese.log

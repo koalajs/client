@@ -1,0 +1,49 @@
+{
+  "name": "koalajs-client",
+  "productName": "Koalajs System Client",
+  "version": "1.0.0",
+  "main": "main.js",
+  "author": "Koala.js",
+  "description": "Desktop App for koalajs",
+  "scripts": {
+    "build": "electron-builder",
+    "dev": "electron main.js"
+  },
+  "dependencies": {
+    "electron-store": "^1.3.0",
+    "electron-updater": "^4.0.6",
+    "ips": "^2.1.3",
+    "log4js": "^3.0.6",
+    "ramda": "^0.25.0"
+  },
+  "build": {
+    "productName": "Koalajs Client",
+    "appId": "com.client.koalajs",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "icon.ico",
+      "target": "nsis"
+    },
+    "msi": {
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "perMachine": true,
+      "shortcutName": "Koalajs Client",
+      "oneClick": false
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": true,
+      "deleteAppDataOnUninstall": true
+    },
+    "linux": {
+      "icon": "icon.ico",
+      "target": "tar.gz"
+    }
+  },
+  "devDependencies": {
+    "electron-builder": "^19.48.2"
+  }
+}

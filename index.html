@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>E-Draw System</title>
+	<style>
+		.row {
+			margin-top: 40vh;
+			width: 100vw;
+			text-align: center;
+		}
+		.inp {
+			border: 1px solid #dcdcdc;
+			height: 2rem;
+			line-height: 2rem;
+			width: 12rem;
+			padding-left: 0.5rem;
+		}
+		.btn {
+			height: 2.4rem;
+		}
+	</style>
+</head>
+<body>
+	<div class="row">
+		<h4> 设置客户端的初始访问地址：</h4>
+		<input id="url" class="inp" placeholder="http://" value="" />
+		<button class="btn" onclick="doSub()">Submit</button>
+	</div>
+</body>
+<script type="text/javascript">
+const { ipcRenderer } = require('electron')
+function GetRequest() {
+    var url = location.href; //获取url中"?"符后的字串 
+    var theRequest = new Object();
+    if (url.indexOf("?") != -1) {
+        var str = url.substr(1);
+        strs = str.split("&");
+        for (var i = 0; i < strs.length; i++) {
+            theRequest[strs[i].split("=")[0]] = (strs[i].split("=")[1]);
+        }
+    }
+    return theRequest;
+}
+var urlParams = GetRequest()
+document.getElementById('ip').innerHTML = urlParams.ip
+document.getElementById('localmachine').innerHTML = urlParams.local_machine
+console.log('parms', urlParams)
+const Store = require('electron-store')
+const st = new Store()
+	if (urlParams.clear) {
+		localStorage.removeItem('clientUrl')
+		st.delete('clientUrl')
+	}
+	function checkURL(URL){
+		var str=URL;
+		var Expression=/http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/;
+		var objExp=new RegExp(Expression);
+		if(objExp.test(str)==true){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	function doSub () {
+		//  增加校验输入格式 头部为http或者https尾部没有/
+		const url = document.getElementById('url').value
+		if (checkURL(url)) {
+			ipcRenderer.send('configURL', url)
+		} else {
+			alert('合法的URL应该包含http(s)')
+		}
+	}
+</script>
+</html>
