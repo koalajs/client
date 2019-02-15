@@ -147,8 +147,9 @@ ipcMain.on('configURL', (event, arg) => {
 
 // 发送消息
 const sendStatusToWindow = (text) => {
-  if (R.isNil(win)) return
-  win.setTitle(text)
+  if (!win.isDestroyed()) {
+    win.setTitle(text)
+  }
 }
 
 autoUpdater.on('checking-for-update', () => {
@@ -168,7 +169,7 @@ autoUpdater.on('error', (err) => {
 })
 
 autoUpdater.on('download-progress', (progressObj) => {
-  sendStatusToWindow(`下载速度: ${Math.floor(progressObj.bytesPerSecond / 1024)} kb/s 已下载: ${Math.floor(progressObj.percent)}% `)
+  sendStatusToWindow(`正在下载新版本，下载速度: ${Math.floor(progressObj.bytesPerSecond / 1024)} kb/s 已下载: ${Math.floor(progressObj.percent)}%`)
 })
 
 autoUpdater.on('update-downloaded', (info) => {
