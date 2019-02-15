@@ -44,13 +44,7 @@
     },
     "linux": {
       "icon": "icon.ico",
-      "target": "AppImage"
-    },
-    "appImage": {
-      "systemIntegration": "ask",
-      "license": "license.txt",
-      "synopsis": "Koalajs Client",
-      "category": "Office"
+      "target": "tar.gz"
     }
   },
   "devDependencies": {
