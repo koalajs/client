@@ -6,6 +6,7 @@ const R = require('ramda')
 const os = require('os')
 const Store = require('electron-store')
 const u = require('url')
+const CryptoJS = require('crypto-js')
 const { autoUpdater } = require('electron-updater')
 
 const st = new Store()
@@ -145,6 +146,39 @@ ipcMain.on('configURL', (event, arg) => {
   restartApplication()
 })
 
+// 通过简单的密钥得到url
+const getUrlFromCode = (d) => {
+  const bytes = CryptoJS.AES.decrypt(d, p.secretKey)
+  const url = bytes.toString(CryptoJS.enc.Utf8)
+  return url
+}
+const checkURL = (str) => {
+  const Expression=/http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/;
+  const objExp=new RegExp(Expression);
+  if(objExp.test(str)==true){
+    return true;
+  }else{
+    return false;
+  }
+}
+
+// 设定storage，通过密钥
+ipcMain.on('configCode', (event, arg) => {
+  const code = getUrlFromCode(arg)
+  if (checkURL(code)) {
+    const url = new u.URL(code)
+    setST(url)
+    restartApplication()
+  } else {
+    dialog.showMessageBox({
+      type: 'error',
+      title: '错误',
+      buttons: ['确定'],
+      message: `非法的密钥`
+    })
+  }
+})
+
 // 发送消息
 const sendStatusToWindow = (text) => {
   if (!win.isDestroyed()) {
@@ -152,17 +186,13 @@ const sendStatusToWindow = (text) => {
   }
 }
 
-autoUpdater.on('checking-for-update', () => {
-  sendStatusToWindow('检查是否有新版本')
-})
+autoUpdater.on('checking-for-update', () => {})
 
 autoUpdater.on('update-available', (info) => {
   sendStatusToWindow('有新版本可更新')
 })
 
-autoUpdater.on('update-not-available', (info) => {
-  sendStatusToWindow('无需更新')
-})
+autoUpdater.on('update-not-available', (info) => {})
 
 autoUpdater.on('error', (err) => {
   sendStatusToWindow('自动更新出错. ' + err)

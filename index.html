@@ -9,6 +9,11 @@
 			width: 100vw;
 			text-align: center;
 		}
+		.row2 {
+			margin-top: 5vh;
+			width: 100vw;
+			text-align: center;
+		}
 		.inp {
 			border: 1px solid #dcdcdc;
 			height: 2rem;
@@ -16,6 +21,12 @@
 			width: 12rem;
 			padding-left: 0.5rem;
 		}
+    .text-code {
+      border: 1px solid #dcdcdc;
+      height: 10rem;
+      width: 30rem;
+      padding-left: 0.5rem;
+    }
 		.btn {
 			height: 2.4rem;
 		}
@@ -23,9 +34,14 @@
 </head>
 <body>
 	<div class="row">
-		<h4> 设置客户端的初始访问地址：</h4>
+		<h4> 设置客户端的初始化地址：</h4>
 		<input id="url" class="inp" placeholder="http://" value="" />
 		<button class="btn" onclick="doSub()">保 存</button>
+	</div>
+	<div class="row2">
+		<h4> 输入密钥：</h4>
+    <textarea id="code" class="text-code" rows="5"></textarea>
+    <p><button class="btn" onclick="doSubCode()">保 存</button></p>
 	</div>
 </body>
 <script type="text/javascript">
@@ -71,5 +87,8 @@ const st = new Store()
 			alert('合法的URL应该包含http(s)')
 		}
 	}
+  function doSubCode () {
+    ipcRenderer.send('configCode', document.getElementById('code').value)
+  }
 </script>
 </html>
