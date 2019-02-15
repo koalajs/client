@@ -43,11 +43,16 @@
       "deleteAppDataOnUninstall": true
     },
     "linux": {
-      "icon": "icon.ico",
-      "target": "tar.gz"
+      "category": "Office",
+      "icon": "icons",
+      "target": "AppImage"
+    },
+    "appImage": {
+      "systemIntegration": "ask"
     }
   },
   "devDependencies": {
+    "electron": "^4.0.5",
     "electron-builder": "^19.48.2"
   }
 }

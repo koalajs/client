@@ -46,7 +46,7 @@ const watchClose = () => {
       title: '关闭',
       cancelId: 1,
       buttons: ['确定', '取消'],
-      message: `确定要关闭程序么？ 当前未保存操作将会丢失！`
+      message: `确定要关闭程序么？关闭前请注意保存重要资料！`
     }, (res) => {
       if (res === 0) {
         win.destroy()
