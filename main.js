@@ -6,9 +6,10 @@ const R = require('ramda')
 const os = require('os')
 const Store = require('electron-store')
 const u = require('url')
+const { autoUpdater } = require('electron-updater')
 
 const st = new Store()
-let win, downWin
+let win, tray
 
 // 组织全局使用的数据
 const data = {
@@ -23,7 +24,7 @@ const data = {
 // 创建浏览窗体
 const createBrowser = (url) => {
   win = new BrowserWindow({
-    title: 'E-Draw System',
+    title: 'Koalajs System',
     minHeight: 570,
     minWidth: 1000,
     backgroundColor: '#ffffff',
@@ -37,17 +38,23 @@ const createBrowser = (url) => {
   win.loadURL(url)
 }
 
-// 创建下载进度窗体
-const createDownloadBrowser = () => {
-  downWin = new BrowserWindow({
-    parent: win,
-    modal: true,
-    height: 250,
-    width: 700,
-    frame: false,
-    resizable: false
+// 监视关闭处理
+const watchClose = () => {
+  win.on('close', (event) => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: '关闭',
+      cancelId: 1,
+      buttons: ['确定', '取消'],
+      message: `确定要关闭程序么？ 当前未保存操作将会丢失！`
+    }, (res) => {
+      if (res === 0) {
+        win.destroy()
+        app.quit()
+      }
+    })
+    event.preventDefault()
   })
-  downWin.loadURL(`file://${__dirname}/down.html`)
 }
 
 const isNotNil = (d) => R.not(R.isNil(d))
@@ -57,26 +64,9 @@ const isRightData = (d) => {
 }
 
 // 从服务端获取最新版本信息
-const getNetVersionFromService = (data) => {
-  return new Promise((resolve, reject) => {
-    const url = `${data.protocol}//${data.url}${data.downloadPath}version.json`
-    const request = net.request(url)
-    request.on('response', (response) => {
-      response.on('data', (body) => {
-        resolve(body)
-      })
-    })
-    // 如果线上没有部署下载包和版本校验文件。过滤掉弹出消息。
-    request.on('error', err => {
-      reject(err)
-    })
-    request.end()
-  })
-}
-
 // 设置系统托盘图标菜单
 const setTray = (d) => {
-  const tray = new Tray(`${__dirname}/logo.png`)
+  tray = new Tray(`${__dirname}/logo.png`)
   tray.setToolTip(`Wynn E-Draw System`)
   const template = [
     { label: '全屏显示', click: () => win.setFullScreen(!win.isFullScreen()) },
@@ -116,100 +106,13 @@ const showEdrawSystem = (d) => {
   createBrowser(url)
 }
 
-// 显示下载进度界面
-const showDownloadPage = (d) => {
-  createDownloadBrowser()
-}
-
 // 显示site设置界面
 const toSetUrl = (d) => {
   const url = `file://${__dirname}/index.html?v=${d.version}&clear=true&local_machine=${d.local_machine}&ip=${d.ip}`
   createBrowser(url)
 }
 
-// 显示新版本下载对话框
-const showDownloadDialog = ({ v, d }) => {
-  dialog.showMessageBox({
-    type: 'info',
-    title: '新版本',
-    cancelId: 1,
-    buttons: ['下载新版本', '跳过'],
-    message: `有新版本可提供更新，版本号: v${v}`
-  }, (res) => {
-    (res === 0) && doShowDownloadProgram({ v, d })
-  })
-}
-
-// buffer转换为JSON
-const getJsonFromBuffer = (v) => {
-  return JSON.parse(v.toString())
-}
-
-// 获取线上版本版本号
-const getNetVersion = async (d) => {
-  const v = await getNetVersionFromService(d)
-  const versionData = getJsonFromBuffer(v)
-  return versionData.version
-}
-
-// 检查是否有新版本需要下载(对比线上与本地版本号)
-const isNeedDownloadNewVersion = ({ v, d }) => {
-  return R.not(R.equals(v, d.version))
-}
-
-// 下载进度计算显示
-const showDownloadProgramStatus = (item, event, totalBytes) => {
-  const p = item.getReceivedBytes() / totalBytes
-  win.setProgressBar(p)
-  event.sender.send('newDownloadBytes', p)
-}
-
-// 下载状态跟踪处理
-const onUpdateItem = (item, event, totalBytes) => {
-  item.on('updated', () => showDownloadProgramStatus(item, event, totalBytes))
-}
-
-// 下载状态处理
-const doDoneStatus = (state, filePath) => {
-  if (state === 'completed') shell.openExternal(filePath)
-  if (state === 'interrupted') dialog.showErrorBox('下载失败', '因网络或其他原因下载被中断! ')
-  app.quit()
-}
-
-// 下载完成状态跟踪
-const onDoneItem = (item, filePath) => {
-  item.on('done', (e, state) => doDoneStatus(state, filePath))
-}
-
-// 下载流程处理
-const showDownloadProgress = (event) => {
-  downWin.webContents.session.on('will-download', (e, item) => {
-    const totalBytes = item.getTotalBytes()
-    const filePath = path.join(app.getPath('downloads'), item.getFilename())
-    item.setSavePath(filePath)
-    onUpdateItem(item, event, totalBytes)
-    onDoneItem(item, filePath)
-  })
-}
-
-// 下载子进程监听处理
-const doShowDownloadProgram = ({ v, d }) => {
-  showDownloadPage(d)
-  ipcMain.once('downPageReady', (event, arg) => {
-    showDownloadProgress(event)
-    const downLink = `${data.protocol}//${data.url}/${data.downloadPath}setup-${v}.msi`
-    downWin.webContents.downloadURL(downLink)
-  })
-}
-
-// 检查版本和访问流程
-const doCheckDownloadAndVisit = async (d) => {
-  showEdrawSystem(d)
-  const v = await getNetVersion(d)
-  R.when(isNeedDownloadNewVersion, showDownloadDialog)({ v, d })
-}
-
-const main = R.ifElse(isRightData, doCheckDownloadAndVisit, toSetUrl)
+const main = R.ifElse(isRightData, showEdrawSystem, toSetUrl)
 
 // 重启程序
 const restartApplication = () => {
@@ -242,10 +145,59 @@ ipcMain.on('configURL', (event, arg) => {
   restartApplication()
 })
 
+// 发送消息
+const sendStatusToWindow = (text) => {
+  if (R.isNil(win)) return
+  win.setTitle(text)
+}
+
+autoUpdater.on('checking-for-update', () => {
+  sendStatusToWindow('检查是否有新版本')
+})
+
+autoUpdater.on('update-available', (info) => {
+  sendStatusToWindow('有新版本可更新')
+})
+
+autoUpdater.on('update-not-available', (info) => {
+  sendStatusToWindow('无需更新')
+})
+
+autoUpdater.on('error', (err) => {
+  sendStatusToWindow('自动更新出错. ' + err)
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  sendStatusToWindow(`下载速度: ${Math.floor(progressObj.bytesPerSecond / 1024)} kb/s 已下载: ${Math.floor(progressObj.percent)}% `)
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  sendStatusToWindow('新版本已下载完成')
+  dialog.showMessageBox({
+    type: 'info',
+    title: '新版本',
+    cancelId: 1,
+    buttons: ['现在更新', '稍后'],
+    message: `有新版本可提供更新`
+  }, (res) => {
+    (res === 0) && doUpdateApp()
+  })
+})
+
+const doUpdateApp = () => {
+  autoUpdater.quitAndInstall(true, true)
+}
+
 // 系统主流程
 app.on('ready', () => {
   main(data)
   setTray(data)
   setMenu()
   setKeys()
+  watchClose()
+  autoUpdater.checkForUpdatesAndNotify()
+})
+
+app.on('window-all-closed', () => {
+  app.quit()
 })
